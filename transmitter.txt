@@ -1,0 +1,108 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+boolean lastbutton=LOW;
+boolean currentbutton=LOW;
+int input=0;
+int buzz=9; // Buzzer Pin
+int j=4;
+int k=3;
+int Laser1 = 7; // creating a variable named Laser and assigning it to digital pin 7
+int Laser2 = 8; // creating a variable named Laser and assigning it to digital pin 8
+
+void setup() {
+  for(int i=3;i<=4;i++)
+  pinMode(i,OUTPUT);
+  pinMode(6,INPUT);
+  pinMode (Laser1,OUTPUT); // designating pin 7 as output (we can use "Laser" instead of the pin # because we assigned "Laser" to pin 7 above)
+  digitalWrite(Laser1,LOW); // making sure the laser is off at startup or reset
+  pinMode (Laser2,OUTPUT); // designating pin 8 as output (we can use "Laser" instead of the pin # because we assigned "Laser" to pin 7 above)
+  digitalWrite(Laser2,LOW); // making sure the laser is off at startup or reset
+
+  Serial.begin(115200);
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+  delay(1000); // Pause for 1 second
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,20);
+  // Display static text
+  display.println("Hello, world!");
+  display.display();
+}
+boolean debounce(boolean last){                 //Function to solve the problem of button debouncing
+  boolean current=digitalRead(6);
+  if(last!=current)
+  {
+    delay(1);
+    current=digitalRead(6);
+    }
+  return current;
+  }
+void loop() {
+  for(int i=3;i<=4;i++)
+  digitalWrite(i,LOW);
+  currentbutton=debounce(lastbutton);
+  if(lastbutton==LOW && currentbutton==HIGH)
+  {
+  input++;
+  }
+  lastbutton=currentbutton;
+  settone(input);
+}
+void one() {         //This function produces the siren sound with ON/OFF led transition.
+  // Whoop up
+  for(int hz = 440; hz < 1000; hz+=25){
+    tone(buzz, hz, 50);
+    delay(10);
+    digitalWrite(4,HIGH);
+    digitalWrite(3,LOW);
+    digitalWrite(Laser1,HIGH);
+    digitalWrite(Laser2,HIGH);
+  }
+  // Whoop down
+  for(int hz = 1000; hz > 440; hz-=25){
+    tone(buzz, hz, 50);
+    delay(10);
+    digitalWrite(4,LOW);
+    digitalWrite(3,HIGH);
+    digitalWrite(Laser1,HIGH);
+    digitalWrite(Laser2,HIGH);
+  }
+}
+void two() {         
+  // Whoop up
+    digitalWrite(4,LOW);
+    digitalWrite(3,LOW);
+    digitalWrite(Laser1,LOW);
+    digitalWrite(Laser2,LOW);
+}
+void settone(int input)
+{
+if(input==1) 
+one();
+else if(input==2)
+two();
+}
+
+
+Positive terminals of two LEDs to pin D3 and D4
+Negative terminals to 220ohm resistors to ground
+Push button top left corner D6, down right one terminal to 5V and bottom left to 10Kohm to ground
+buzzer input from D9
+Laser:
+D7 D8 to S pin of laser
+Middle pin to 5V
+- pin to gnd
